@@ -1,0 +1,45 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_PASSWORD: password
+      MYSQL_USER: laravel
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - laravel-tier
+
+  backend:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - db
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - laravel-tier
+
+  frontend:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html:ro
+    networks:
+      - laravel-tier
+
+volumes:
+  dbdata:
+    driver: local
+
+networks:
+  laravel-tier:
+    driver: bridge
