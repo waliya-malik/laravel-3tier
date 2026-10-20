@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM php:8.3-apache
 
 # System dependencies
 RUN apt-get update && apt-get install -y \
@@ -15,12 +15,12 @@ WORKDIR /var/www/html
 # Code copy
 COPY . .
 
-# ENV fix - composer ko superuser allow
+# ENV fix
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# .env bana lo aur composer install me scripts skip karo - yahi fix hai
+# Install - FIXED (ignore-platform-reqs hata diya hai)
 RUN cp -n .env.example .env || true \
-    && composer install --no-interaction --prefer-dist --no-dev --no-scripts --ignore-platform-reqs \
+    && composer install --no-interaction --prefer-dist --no-dev --no-scripts \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
