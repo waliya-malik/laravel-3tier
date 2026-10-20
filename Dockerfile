@@ -1,21 +1,31 @@
 FROM php:8.2-apache
 
+# System dependencies
 RUN apt-get update && apt-get install -y \
     git zip unzip libzip-dev libpng-dev libonig-dev libxml2-dev \
-    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
+    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd \
+    && a2enmod rewrite \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-RUN a2enmod rewrite
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+# Composer copy
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
+
+# Code copy
 COPY . .
-RUN composer install --no-interaction --prefer-dist
-RUN chown -R www-data:www-data storage bootstrap/cache
-RUN chmod -R 775 storage bootstrap/cache
-RUN cp .env.example .env || true
-RUN php artisan key:generate || true
+
+# ENV fix - composer ko superuser allow
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
+# .env bana lo aur composer install me scripts skip karo - yahi fix hai
+RUN cp -n .env.example .env || true \
+    && composer install --no-interaction --prefer-dist --no-dev --no-scripts --ignore-platform-reqs \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
+# Apache document root to public
+RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
 
 EXPOSE 80
+CMD ["apache2-foreground"]
