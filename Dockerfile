@@ -1,4 +1,4 @@
-FROM php:8.3-apache
+FROM php:8.4-apache
 
 # System dependencies
 RUN apt-get update && apt-get install -y \
@@ -18,9 +18,11 @@ COPY . .
 # ENV fix
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Install - FIXED (ignore-platform-reqs hata diya hai)
-RUN cp -n .env.example .env || true \
+# FINAL FIX: purana vendor delete karo aur fresh install karo
+RUN rm -rf vendor \
+    && cp -n .env.example .env || true \
     && composer install --no-interaction --prefer-dist --no-dev --no-scripts \
+    && php artisan key:generate --no-interaction || true \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
