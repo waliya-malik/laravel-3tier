@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+
+    environment {
+        KUBECONFIG = '/var/lib/jenkins/.kube/config'
+        KUBECTL    = '/snap/bin/kubectl'
+    }
+
+    stages {
+        stage('Build Image') {
+            steps {
+                sh 'docker build -f Dockerfile.k8s -t laravel-3tier-k8s:latest .'
+            }
+        }
+
+        stage('Load Images into Kubernetes') {
+            steps {
+                sh '''
+                    docker image inspect mysql:8.0 > /dev/null 2>&1 || docker pull mysql:8.0
+                    docker save mysql:8.0 | docker exec -i minikube ctr -n k8s.io images import -
+                    docker save laravel-3tier-k8s:latest | docker exec -i minikube ctr -n k8s.io images import -
+                '''
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                    $KUBECTL apply -f k8s/
+                    $KUBECTL rollout restart deployment/laravel
+                    $KUBECTL rollout status deployment/mysql --timeout=300s
+                    $KUBECTL rollout status deployment/laravel --timeout=300s
+                    $KUBECTL get pods,svc
+                '''
+            }
+        }
+    }
+}
