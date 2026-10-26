@@ -1,6 +1,4 @@
-FROM laravel-3tier:latest
-
-RUN docker-php-ext-install pdo_mysql
+FROM laravel-3tier-k8s-base:latest
 
 WORKDIR /var/www/html
 
