@@ -11,3 +11,4 @@ Route::get("/students", [StudentController::class, "index"]);
 Route::get("/students/create", [StudentController::class, "create"]);
 Route::post("/students", [StudentController::class, "store"]);
 Route::delete("/students/{id}", [StudentController::class, "destroy"]);
+Route::get('/health', fn () => 'Laravel deployed by Jenkins on Kubernetes');
