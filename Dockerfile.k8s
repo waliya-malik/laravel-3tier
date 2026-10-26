@@ -2,4 +2,8 @@ FROM laravel-3tier-k8s-base:latest
 
 WORKDIR /var/www/html
 
+COPY . /var/www/html
+
+RUN chown -R www-data:www-data storage bootstrap/cache
+
 CMD ["sh", "-c", "until php artisan migrate --force; do echo 'waiting for mysql'; sleep 5; done; chown -R www-data:www-data storage; apache2-foreground"]
